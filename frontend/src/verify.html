@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Account</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="tic_tac_toe.js"></script>
+    <script src="amazon-cognito-identity.min.js"></script>
+</head>
+<body>
+    <div class="form-container">
+        <h2>Verify Account</h2>
+        <p>Please enter the verification code sent to your email.</p>
+        <input type="text" id="verificationCode" placeholder="Enter verification code" required>
+        <button id="verify" onclick="verifyCode()">Verify</button>
+    </div>
+</body>
+</html>

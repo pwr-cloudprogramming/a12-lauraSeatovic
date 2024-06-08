@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe Game</title>
+    <link rel="stylesheet" href="css/tic_tac_toe.css">
+</head>
+<body>
+    <div id="container">
+        <!-- Login and user info section -->
+        <div id="login-section">
+            <div id="user-info">
+                <span id="display-name"></span>
+                <a id="login-btn" href="login.html">Log In</a>
+                <button id="logout" style="display: none;">Log Out</button>
+            </div>
+        </div>
+        
+        <!-- Main content -->
+        <div id="main-content">
+            <!-- Board section -->
+            <div class="board-container">
+                <div class="board" id="board"></div>
+            </div>
+            
+            <!-- Game info section -->
+            <div class="game-info">
+                <div id="player" class="player-container"></div>
+                <div id="message" class="message-container"></div>
+                <div id="gameIdContainer"></div>
+                <div id="players" class="players-container"></div>
+            </div>
+        </div>
+
+        <!-- Game control buttons -->
+        <div class="game-controls">
+            <button id="add-player-btn">Enter Game</button>
+            <button id="new-game-btn">New Room</button>
+            <button id="join-game-btn">Join Room</button>
+        </div>
+    </div>
+
+    <script>
+        // Define your updateUI() function here
+        function updateUI() {
+            // Your code to update the UI goes here
+            const idToken = localStorage.getItem('idToken');
+            const displayName = localStorage.getItem('name');
+            const logoutButton = document.getElementById('logout');
+            const displayNameElement = document.getElementById('display-name');
+            const loginButton = document.getElementById('login-btn');
+            if (idToken && displayName) {
+                console.log("logged in")
+                // User is logged in, display user info and logout button
+                displayNameElement.textContent = `Welcome, ${displayName}`;
+                logoutButton.style.display = 'inline';
+                loginButton.style.display = 'none'; // Hide the login button
+            } else {
+                // User is not logged in, hide user info and logout button
+                displayNameElement.textContent = '';
+                logoutButton.style.display = 'none';
+                loginButton.style.display = 'block'; // Show the login button
+            }
+        }
+        // Call updateUI() when the page is loaded
+        window.onload = function() {
+            updateUI();
+        };
+    </script>
+
+    <script src="tic_tac_toe.js"></script>
+    <script src="amazon-cognito-identity.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</body>
+</html>
