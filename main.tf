@@ -2,6 +2,14 @@ provider "aws" {
   region = "us-east-1"
 }
 
+data "aws_iam_role" "existing_role" {
+  name = "LabRole"
+}
+
+data "aws_iam_instance_profile" "existing_instance_profile" {
+  name = "LabInstanceProfile"
+}
+
 resource "aws_security_group" "allow_ssh_http" {
   name_prefix = "allow_ssh_http"
 
@@ -81,6 +89,15 @@ resource "aws_instance" "tic_tac_toe" {
     }
 
 
+}
+
+resource "random_id" "bucket_id" {
+  byte_length = 8
+}
+
+resource "aws_s3_bucket" "images_bucket" {
+  bucket = "images-${random_id.bucket_id.hex}"
+  acl    = "private" 
 }
 
 output "public_ip" {

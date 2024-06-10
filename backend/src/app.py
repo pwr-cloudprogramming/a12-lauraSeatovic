@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file
 from controllers.gameController import GameController
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit, join_room
@@ -7,12 +7,18 @@ import cognitojwt
 import requests
 import jwt
 from jwt.algorithms import RSAAlgorithm
+import boto3
+from io import BytesIO
+import random
 
 app = Flask(__name__, template_folder='templates')
 socketio = SocketIO(app, cors_allowed_origins='*') #modify this!!
 CORS(app)
 
 game_controller = GameController()
+
+s3 = boto3.client('s3')
+bucket_name = 'images-7af32670378fbc05'
 
 
 @app.route('/')
@@ -24,6 +30,8 @@ def add_player():
     data = request.get_json()
     gameId = data.get('game_id')
     name = data.get('name')
+    playerId = data.get('id')
+    photoName = data.get('photoName')
 
     token = request.headers.get('Authorization')
     if not token:
@@ -35,9 +43,9 @@ def add_player():
         claims = verifyToken(token)
         if claims:
             try:
-                response = game_controller.newPlayer(name, gameId)
+                response = game_controller.newPlayer(name, gameId, playerId, photoName)
                 print(game_controller.getPlayers(gameId))
-                socketio.emit('players', {'player_names' : game_controller.getPlayers(gameId)}, room = gameId)
+                socketio.emit('players', {'players_info' : game_controller.getPlayers(gameId)}, to=gameId)
                 print(response)
                 return response
             except Exception as e:
@@ -90,7 +98,7 @@ def check_game_id():
     data = request.get_json()
     gameId = data.get('game_id')
     if game_controller.checkGameId(gameId):
-        socketio.emit('players', {'player_names' : game_controller.getPlayers(gameId)}, to = gameId)
+        socketio.emit('players', {'players_info' : game_controller.getPlayers(gameId)}, to=gameId)
         return jsonify({'success': True, 'message': f'Valid game id!'})
     return jsonify({'success': False, 'message': f'Invalid game id!'})
 
@@ -142,8 +150,8 @@ def handle_join(data):
         print("No room specified in the request.")
 
 REGION = 'us-east-1'
-USERPOOL_ID = 'us-east-1_RtsW9dCwF'
-APP_CLIENT_ID = '25f1pfetvq571i5s5d1mggs5to'
+USERPOOL_ID = 'us-east-1_t5sLRIgzI'
+APP_CLIENT_ID = '1ftrp80oc2pggrg7itofjph0eq'
 JWKS_URL = f'https://cognito-idp.{REGION}.amazonaws.com/{USERPOOL_ID}/.well-known/jwks.json'
 
 def get_jwks():
@@ -182,6 +190,35 @@ def verifyToken(id_token):
     except Exception as e:
         print(f'Error: {e}')
         raise e
+    
+
+@app.route('/upload', methods=['POST'])
+def upload_photo():
+    # Get the uploaded file
+    photo = request.files['photo']
+    photo_name = request.form.get('photoName')
+    # Upload the file to S3
+    s3.upload_fileobj(photo, bucket_name, photo_name, ExtraArgs={'ContentType': 'image/jpeg'})
+
+    return 'Photo uploaded successfully'
+
+@app.route('/photo/<photo_name>', methods=['GET'])
+def fetch_photo(photo_name):
+    try:
+        file_obj = s3.get_object(Bucket=bucket_name, Key=photo_name)
+        return send_file(BytesIO(file_obj['Body'].read()), mimetype=file_obj['ContentType'])
+    except Exception as e:
+        return jsonify({'error': str(e)}), 404
+    
+@app.route('/random_game_id', methods=['GET'])
+def join_random_game():
+    if len(list(game_controller.games.keys())) > 0:
+        gameId = random.choice(list(game_controller.games.keys()))
+        socketio.emit('players', {'players_info' : game_controller.getPlayers(gameId)}, to=gameId)
+        return jsonify({'success': True, 'game_id': gameId})
+    else:
+        return jsonify({'success': False, 'message': 'Failed to join a random game'}), 400
+
 
 
 if __name__ == '__main__':

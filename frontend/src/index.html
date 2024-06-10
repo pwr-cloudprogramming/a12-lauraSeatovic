@@ -11,9 +11,14 @@
         <!-- Login and user info section -->
         <div id="login-section">
             <div id="user-info">
-                <span id="display-name"></span>
-                <a id="login-btn" href="login.html">Log In</a>
-                <button id="logout" style="display: none;">Log Out</button>
+                <div style="display: flex; align-items: center;">
+                    <span id="display-name"></span>
+                    <img id="profilePhoto" style="display:none; width: 50px; height: 50px; margin-left: 10px;" alt="Profile Photo">
+                </div>
+                <div>
+                    <a id="login-btn" href="login.html">Log In</a>
+                    <button id="logout" style="display: none;">Log Out</button>
+                </div>
             </div>
         </div>
         
@@ -29,7 +34,9 @@
                 <div id="player" class="player-container"></div>
                 <div id="message" class="message-container"></div>
                 <div id="gameIdContainer"></div>
-                <div id="players" class="players-container"></div>
+                <div id="players-container">
+                    <!-- Player information will be dynamically added here -->
+                </div>
             </div>
         </div>
 
@@ -37,7 +44,8 @@
         <div class="game-controls">
             <button id="add-player-btn">Enter Game</button>
             <button id="new-game-btn">New Room</button>
-            <button id="join-game-btn">Join Room</button>
+            <button id="join-game-btn">Join Room by Id</button>
+            <button id="join-random-btn">Join Random Room</button>
         </div>
     </div>
 

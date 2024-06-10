@@ -1,9 +1,11 @@
+//<reference types="aws-sdk" />
 document.addEventListener('DOMContentLoaded', function() {
     const boardElement = document.getElementById('board');
     const addButton = document.getElementById('add-player-btn');
     const resetButton = document.getElementById('reset-game-btn');
     const newGameButton = document.getElementById('new-game-btn');
     const joinGameButton = document.getElementById('join-game-btn');
+    const joinRandomButton = document.getElementById('join-random-btn');
 
     const verifyButton = document.getElementById('verify')
 
@@ -17,8 +19,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let socket = null;
 
     const poolData = {
-        UserPoolId: 'us-east-1_RtsW9dCwF', // Your user pool id here
-        ClientId: '25f1pfetvq571i5s5d1mggs5to'// Your client id here
+        UserPoolId: 'us-east-1_t5sLRIgzI', // Your user pool id here
+        ClientId: '1ftrp80oc2pggrg7itofjph0eq'// Your client id here
     };
     const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
 
@@ -38,7 +40,46 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error("Element with ID 'login' not found.");
     }
         
-    function signup() {
+
+    async function signup(event) {
+        event.preventDefault();
+        const email = document.getElementById('signupEmail').value;
+        const name = document.getElementById('signupName').value;
+        const password = document.getElementById('signupPassword').value;
+    
+        const fileInput = document.getElementById('profilePicture');
+        const file = fileInput.files[0];
+    
+        const randomNumbers = Math.floor(Math.random() * 1000000);
+        // Create the photo name using the email and random numbers
+        const photoName = `${name}-${randomNumbers}`;
+
+        // Create a FormData object and append the form fields
+        const formData = new FormData();
+        formData.append('email', email);
+        formData.append('name', name);
+        formData.append('password', password);
+        formData.append('photo', file);
+        formData.append('photoName', photoName); // Append the photo name
+    
+        // Send the FormData object to the backend using fetch
+        try {
+            const response = await fetch(`${baseUrl}/upload`, { // Constructing the URL using the base URL
+                method: 'POST',
+                body: formData
+            });
+    
+            if (!response.ok) {
+                throw new Error('Failed to upload photo');
+            }
+    
+            signupWithCognito(photoName);
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    }
+    
+    function signupWithCognito(photoName){
         const email = document.getElementById('signupEmail').value;
         const name = document.getElementById('signupName').value;
         const password = document.getElementById('signupPassword').value;
@@ -54,6 +95,13 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         const attributeEmail = new AmazonCognitoIdentity.CognitoUserAttribute(dataEmail);
         const attributeName = new AmazonCognitoIdentity.CognitoUserAttribute(dataName);
+
+        const attributePhotoName = new AmazonCognitoIdentity.CognitoUserAttribute({
+            Name: 'custom:photoName',
+            Value: photoName
+        });
+
+        attributeList.push(attributePhotoName);
     
         attributeList.push(attributeEmail);
         attributeList.push(attributeName);
@@ -82,12 +130,16 @@ document.addEventListener('DOMContentLoaded', function() {
     async function addPlayer() {
         const id_token = localStorage.getItem('idToken');
         const name = localStorage.getItem('name')
+        const photoName = localStorage.getItem('photoName')
+        const id = localStorage.getItem('id')
         if (name) {
             const url = `${baseUrl}/add_player`;
             const data = {
                 playerId: '',  // Let backend generate player ID
                 symbol: '',  // Let backend assign symbol (X or O)
                 name: name,
+                photoName: photoName,
+                id: id,
                 game_id: localStorage.getItem('gameId')
             };
             try {
@@ -155,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                     socket.on('players', function(data) {
                         console.log('Received update from server:', data);
-                        showPlayers(data.player_names)
+                        showPlayers(data.players_info)
                     });
                 
                     socket.on('game_status', function(data) {
@@ -311,7 +363,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                     socket.on('players', function(data) {
                         console.log('Received update from server:', data);
-                        showPlayers(data.player_names)
+                        showPlayers(data.players_info)
                     });
                 
                     socket.on('game_status', function(data) {
@@ -336,6 +388,63 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
 
+    async function joinRandomGame() {
+        gameOver = false
+        const url = `${baseUrl}/random_game_id`;
+    
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            if (!response.ok) {
+                throw new Error('Failed to join');
+            }
+            const responseData = await response.json();
+            if (responseData.success) {
+                const gameId = responseData.game_id;
+                localStorage.setItem('gameId', gameId);
+                console.log("Joined new game", responseData);
+                
+                socket = io(baseUrl);
+
+                socket.on('connect', () => {
+                    socket.emit("join", { room: gameId });
+
+                    socket.on('update_board', function(data) {
+                        console.log('Received update from server:', data);
+                        renderBoard()
+                        // Update the board based on the data received
+                    });
+                
+                    socket.on('players', function(data) {
+                        console.log('Received update from server:', data);
+                        showPlayers(data.players_info)
+                    });
+                
+                    socket.on('game_status', function(data) {
+                        console.log('Received update from server:', data);
+                        showMessage(data.message)
+                        // Update the board based on the data received
+                    });
+                
+                
+                })
+
+                const gameIdContainer = document.getElementById('gameIdContainer');
+                gameIdContainer.textContent = `Game ID: ${gameId}`;
+
+                renderBoard()
+        }else{
+            console.log("Error joining new game", responseData)
+        }
+        } catch (error) {
+            console.error('Error joining new game:', error);
+        }
+    }
+
     
     function showMessage(message) {
         const messageElement = document.getElementById('message');
@@ -344,16 +453,59 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showPlayers(players) {
-        const playersElement = document.getElementById('players');
-        playersElement.textContent = "Players: " + players;
-        playersElement.style.display = 'block';
+        console.log(players)
+        //const playerNames = players.map(player => player.name).join(', '); // Extracting names from the list
+        //const playersElement = document.getElementById('players');
+        //playersElement.textContent = "Players: " + playerNames; // Displaying the names
+        //playersElement.style.display = 'block';
+
+
+        try {
+    
+            // Display players and profile pictures
+            const playersContainer = document.getElementById('players-container');
+            playersContainer.innerHTML = ''; // Clear previous content
+    
+            players.forEach(async (player) => {
+                const { name, photoName } = player;
+            
+                // Fetch profile picture
+                const photoUrl = `${baseUrl}/photo/${photoName}`;
+                const response = await fetch(photoUrl);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch profile picture');
+                }
+                const blob = await response.blob();
+                const photoUrlObject = URL.createObjectURL(blob);
+            
+                // Create elements to display player information
+                const playerDiv = document.createElement('div');
+                playerDiv.classList.add('player');
+            
+                const imgElement = document.createElement('img');
+                imgElement.src = photoUrlObject;
+                imgElement.alt = name + "'s profile picture";
+                imgElement.style.height = '50px'; // Set height to 50px
+            
+                const nameElement = document.createElement('p');
+                nameElement.textContent = name;
+            
+                // Append elements to the container
+                playerDiv.appendChild(imgElement);
+                playerDiv.appendChild(nameElement);
+                playersContainer.appendChild(playerDiv);
+            });
+        } catch (error) {
+            console.error('Error fetching and displaying players:', error);
+        }
     }
 
-    if (addButton && newGameButton && joinGameButton) { // Check if the button exists before adding the event listener
+    if (addButton && newGameButton && joinGameButton && joinRandomButton) { // Check if the button exists before adding the event listener
         addButton.addEventListener('click', addPlayer);
         //resetButton.addEventListener('click', resetBoard);
         newGameButton.addEventListener('click', startNewGame);
         joinGameButton.addEventListener('click', joinGame);
+        joinRandomButton.addEventListener('click', joinRandomGame);
     } else {
         console.error("Elements not found.");
     }
@@ -453,11 +605,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 displayNameElement.textContent = `Welcome, ${displayName}`;
                 logoutButton.style.display = 'inline';
                 loginButton.style.display = 'none'; // Hide the login button
+                fetchAndDisplayProfilePhoto(localStorage.getItem('photoName'));
             } else {
                 // User is not logged in, hide user info and logout button
                 displayNameElement.textContent = '';
                 logoutButton.style.display = 'none';
                 loginButton.style.display = 'block'; // Show the login button
+                const profilePhotoElement = document.getElementById('profilePhoto');
+                profilePhotoElement.src = ''; // Set the src attribute to an empty string
+                profilePhotoElement.style.display = 'none'; // Hide the profile photo
             }
         }
 
@@ -502,8 +658,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     const displayName = decodedIdToken.name || decodedIdToken.email || 'User';
 
                     localStorage.setItem('name', displayName);
-                    
-                    // Redirect to home page or perform any other action
+                    localStorage.setItem('id', decodedIdToken.sub);
+        
+                    const photoName = decodedIdToken['custom:photoName']; // Get the photo name from the token
+                    localStorage.setItem('photoName', photoName);
                     window.location.href = 'index.html';
 
                     // Wait for the window to finish navigating to the new page
@@ -513,6 +671,45 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
             });
         }
+
+        function fetchAndDisplayProfilePhoto(photoName) {
+            const photoUrl = `${baseUrl}/photo/${photoName}`;
+        
+            fetch(photoUrl, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('idToken')}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const url = URL.createObjectURL(blob);
+                console.log("call display photo")
+                displayProfilePhoto(url);
+            })
+            .catch(error => {
+                console.error('There has been a problem with your fetch operation:', error);
+            });
+        }
+        
+
+        function displayProfilePhoto(photoUrl) {
+            console.log("Displaying profile photo:", photoUrl); // Log the photo URL
+            const profilePhotoElement = document.getElementById('profilePhoto');
+            if (profilePhotoElement) {
+                console.log("Setting profile photo source..");
+                profilePhotoElement.src = photoUrl;
+                profilePhotoElement.style.display = 'block';
+            } else {
+                console.error("Profile photo element not found!");
+            }
+        }
+        
 
         window.onload = function() {
             // Call updateUI() after the page has loaded

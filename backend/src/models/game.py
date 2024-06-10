@@ -13,12 +13,12 @@ class Game():
         self.turnCount = 0
         self.playersIdList = []
     
-    def newPlayer(self, name):
+    def newPlayer(self, name, playerId, photoName):
         print("dict in new", self.players)
         if(len(self.players) >= 2):
             return jsonify({'success': False, 'message': 'There are already two players!'})
         
-        playerId = str(uuid.uuid4())[:8]
+        #playerId = str(uuid.uuid4())[:8]
 
         if playerId not in self.players:
 
@@ -27,7 +27,7 @@ class Game():
             else:
                 symbol = 'o'
 
-            player = Player(symbol, playerId, name)
+            player = Player(symbol, playerId, name, photoName)
 
             self.players[playerId] = player
             self.playersIdList.append(playerId)
@@ -78,6 +78,14 @@ class Game():
             return [player.name for player in self.players.values()]
         else:
             return []
+        
+    def getPlayers(self):
+        if len(self.players) > 0:
+            return [{'name': player.name, 'playerId': player.playerId, 'photoName': player.photoName} for player in self.players.values()]
+
+        else:
+            return []
+    
 
     def getNextPlayerId(self):
         return self.playersIdList[self.turnCount % 2]

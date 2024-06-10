@@ -19,6 +19,13 @@ resource "aws_cognito_user_pool" "tic_tac_toe_user_pool" {
     required            = true
   }
 
+  schema {
+    name                 = "photoName"
+    attribute_data_type  = "String"
+    mutable              = true
+    required             = false
+  }
+
   password_policy {
     minimum_length    = "8"
   }
@@ -36,7 +43,3 @@ resource "aws_cognito_user_pool_client" "tic_tac_toe_user_pool_client" {
   callback_urls = ["http://localhost:5500"]
 }
 
-resource "aws_cognito_user_pool_domain" "tic_tac_toe_user_pool_domain" {
-  domain = "tic-tac-toe-domain"
-  user_pool_id = aws_cognito_user_pool.tic_tac_toe_user_pool.id
-}

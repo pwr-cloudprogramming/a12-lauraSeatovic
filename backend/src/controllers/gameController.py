@@ -15,8 +15,8 @@ class GameController:
         self.games[newGame.gameId] = newGame
         return jsonify({'success': True, 'message': f'Started new game!', 'game_id': newGame.gameId})
 
-    def newPlayer(self, name, gameId):
-        return self.games[gameId].newPlayer(name)
+    def newPlayer(self, name, gameId, playerId, photoName):
+        return self.games[gameId].newPlayer(name, playerId, photoName)
     
     def makeMove(self, playerId, row, col, gameId):
         return self.games[gameId].makeMove(playerId, row, col)
@@ -32,7 +32,7 @@ class GameController:
         self.board.reset()
 
     def getPlayers(self, gameId):
-        return self.games[gameId].getPlayersName()
+        return self.games[gameId].getPlayers()
 
     def checkGameId(self, gameId):
         return gameId in self.games
