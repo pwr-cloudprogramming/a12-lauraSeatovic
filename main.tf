@@ -91,14 +91,6 @@ resource "aws_instance" "tic_tac_toe" {
 
 }
 
-resource "random_id" "bucket_id" {
-  byte_length = 8
-}
-
-resource "aws_s3_bucket" "images_bucket" {
-  bucket = "images-${random_id.bucket_id.hex}"
-  acl    = "private" 
-}
 
 output "public_ip" {
   value = aws_instance.tic_tac_toe.public_ip

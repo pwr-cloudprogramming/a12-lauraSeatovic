@@ -2,6 +2,14 @@ provider "aws" {
   region = "us-east-1"
 }
 
+data "aws_iam_role" "existing_role" {
+  name = "LabRole"
+}
+
+data "aws_iam_instance_profile" "existing_instance_profile" {
+  name = "LabInstanceProfile"
+}
+
 resource "aws_cognito_user_pool" "tic_tac_toe_user_pool" {
   name = "tic_tac_toe-user-pool"
   auto_verified_attributes = ["email"]
@@ -43,3 +51,11 @@ resource "aws_cognito_user_pool_client" "tic_tac_toe_user_pool_client" {
   callback_urls = ["http://localhost:5500"]
 }
 
+resource "random_id" "bucket_id" {
+  byte_length = 8
+}
+
+resource "aws_s3_bucket" "images_bucket" {
+  bucket = "images-${random_id.bucket_id.hex}"
+  acl    = "private" 
+}
