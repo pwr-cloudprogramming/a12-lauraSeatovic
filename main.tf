@@ -73,8 +73,8 @@ resource "aws_instance" "tic_tac_toe" {
               sudo curl -L https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
               sudo chmod +x /usr/local/bin/docker-compose
               sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
-              git clone https://github.com/pwr-cloudprogramming/a10-lauraSeatovic.git
-              cd a10-lauraSeatovic
+              git clone https://github.com/pwr-cloudprogramming/a12-lauraSeatovic.git
+              cd a12-lauraSeatovic
               PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
               echo $PUBLIC_IP > ip.txt
               echo "PUBLIC_IP=$PUBLIC_IP" > .env
