@@ -63,6 +63,9 @@ resource "aws_instance" "tic_tac_toe" {
   vpc_security_group_ids = [
     aws_security_group.allow_ssh_http.id,
   ]
+
+  iam_instance_profile = data.aws_iam_instance_profile.existing_instance_profile.name
+
   user_data = <<-EOF
               #!/bin/bash
 
