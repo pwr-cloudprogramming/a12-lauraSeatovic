@@ -10,6 +10,7 @@ from jwt.algorithms import RSAAlgorithm
 import boto3
 from io import BytesIO
 import random
+from boto3.dynamodb.conditions import Key, Attr
 
 app = Flask(__name__, template_folder='templates')
 socketio = SocketIO(app, cors_allowed_origins='*') #modify this!!
@@ -18,7 +19,7 @@ CORS(app)
 game_controller = GameController()
 
 s3 = boto3.client('s3')
-bucket_name = 'images-cdd1edf7af7db6da'
+bucket_name = 'images-d978710632e0ba3f'
 
 
 @app.route('/')
@@ -150,8 +151,8 @@ def handle_join(data):
         print("No room specified in the request.")
 
 REGION = 'us-east-1'
-USERPOOL_ID = 'us-east-1_6EVOsBDYp'
-APP_CLIENT_ID = '2g9jee24r4up7ee0d5asb44ep0'
+USERPOOL_ID = 'us-east-1_s7dGZtBVP'
+APP_CLIENT_ID = '494q30133etbs537mdrr6a267b'
 JWKS_URL = f'https://cognito-idp.{REGION}.amazonaws.com/{USERPOOL_ID}/.well-known/jwks.json'
 
 def get_jwks():
@@ -218,6 +219,32 @@ def join_random_game():
         return jsonify({'success': True, 'game_id': gameId})
     else:
         return jsonify({'success': False, 'message': 'Failed to join a random game'}), 400
+    
+
+dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+table = dynamodb.Table('TicTacToeScores')
+
+@app.route('/get_results', methods=['GET'])
+def get_results():
+    try:
+        # Perform scan operation to get all items
+        response = table.scan()
+
+        scores = {}
+        for entry in response['Items']:
+            player_id = entry['playerId']
+            score = int(entry['score'])  # Convert score to an integer
+            if player_id in scores:
+                scores[player_id] += score
+            else:
+                scores[player_id] = score
+
+        # Return JSON response with all items
+        return jsonify(scores), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 
 

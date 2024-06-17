@@ -117,11 +117,10 @@ resource "aws_api_gateway_deployment" "deployment" {
   stage_name  = "dev"
 }
 
-
 data "archive_file" "lambda_package" {
   type        = "zip"
-  source_file = "${path.module}/lambda_function.zip"
-  output_path = "${path.module}/lambda_function.zip"
+  source_file = "lambda_function.py"
+  output_path = "lambda_function.zip"
 }
 
 resource "aws_lambda_function" "python_lambda" {
@@ -133,6 +132,8 @@ resource "aws_lambda_function" "python_lambda" {
   source_code_hash = data.archive_file.lambda_package.output_base64sha256
 }
 
+
+
 data "aws_iam_role" "existing_role" {
   name = "LabRole"
 }
@@ -143,4 +144,49 @@ resource "aws_lambda_permission" "api_gw" {
   function_name = aws_lambda_function.python_lambda.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_api_gateway_rest_api.my_api.execution_arn}/*/*"
+}
+
+//CORS
+# Define the OPTIONS method for CORS
+resource "aws_api_gateway_method" "options_method" {
+  rest_api_id   = aws_api_gateway_rest_api.my_api.id
+  resource_id   = aws_api_gateway_resource.my_resource.id  # Replace with your resource ID
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+# Configure CORS headers for OPTIONS method response
+resource "aws_api_gateway_method_response" "options_method_response" {
+  rest_api_id = aws_api_gateway_rest_api.my_api.id
+  resource_id = aws_api_gateway_resource.my_resource.id  # Replace with your resource ID
+  http_method = aws_api_gateway_method.options_method.http_method
+  status_code = "200"
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS,POST'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+}
+
+# Configure integration response for OPTIONS method
+resource "aws_api_gateway_integration_response" "options_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.my_api.id
+  resource_id = aws_api_gateway_resource.my_resource.id  # Replace with your resource ID
+  http_method = aws_api_gateway_method.options_method.http_method
+  status_code = "200"
+
+  response_templates = {
+    "application/json" = ""
+  }
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS,POST'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
 }

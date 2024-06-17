@@ -66,7 +66,7 @@ class Game():
         if winner:
             self.board.winner = winner
             self.winnerPlayer = self.players[winner]
-            return {'success': True, 'winner': self.winnerPlayer.name, 'status': 0, 'message': f'Game over! Winner is {self.winnerPlayer.name}'} #game over and there is a winner
+            return {'success': True, 'winner': self.winnerPlayer.name, 'status': 0, 'message': f'Game over! Winner is {self.winnerPlayer.name}', 'winnerId': self.winnerPlayer.playerId} #game over and there is a winner
         if self.board.checkEnd():
             print("game controller", "tie")
             return {'success': True, 'message': 'Tie!', 'status': 1} #tie game

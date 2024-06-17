@@ -6,6 +6,44 @@ document.addEventListener('DOMContentLoaded', function() {
     const newGameButton = document.getElementById('new-game-btn');
     const joinGameButton = document.getElementById('join-game-btn');
     const joinRandomButton = document.getElementById('join-random-btn');
+    const baseUrl = 'http://localhost:8080';
+    // Define getResults function
+    function getResults() {
+        console.log("getResults function called");
+
+        const tableBody = document.getElementById('scoreTableBody');
+        if (!tableBody) {
+            console.error("Element with id 'scoreTableBody' not found");
+            return;
+        }
+
+        // Fetch the scores from the backend
+        console.log("Fetching scores from the backend...");
+        fetch(`${baseUrl}/get_results`)
+            .then(response => {
+                console.log("Response received from backend");
+                return response.json();
+            })
+            .then(scores => {
+                console.log("Scores received:", scores);
+                for (const [playerId, score] of Object.entries(scores)) {
+                    const row = document.createElement('tr');
+                    const playerIdCell = document.createElement('td');
+                    playerIdCell.textContent = playerId;
+                    const scoreCell = document.createElement('td');
+                    scoreCell.textContent = score;
+                    row.appendChild(playerIdCell);
+                    row.appendChild(scoreCell);
+                    tableBody.appendChild(row);
+                }
+                console.log("Scores added to table");
+            })
+            .catch(error => console.error('Error fetching scores:', error));
+    }
+
+    // Call getResults to fetch and display scores
+    console.log("Calling getResults from DOMContentLoaded event listener");
+    getResults();
 
     const verifyButton = document.getElementById('verify')
 
@@ -15,12 +53,11 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error("Element with ID 'verify' not found.");
         }
 
-    const baseUrl = 'http://localhost:8080';
     let socket = null;
 
     const poolData = {
-        UserPoolId: 'us-east-1_6EVOsBDYp', // Your user pool id here
-        ClientId: '2g9jee24r4up7ee0d5asb44ep0'// Your client id here
+        UserPoolId: 'us-east-1_s7dGZtBVP', // Your user pool id here
+        ClientId: '494q30133etbs537mdrr6a267b'// Your client id here
     };
     const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
 
@@ -307,9 +344,39 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Move made successfully:', responseData);
             const status = responseData.status;
             if (status === 0) {
+                getResults();
                 console.log('Game over! Winner is ' + responseData.winner);
                 gameOver = true;
-                //showMessage('Game over! Winner is ' + responseData.winner);
+                const gateWayEndpointUrl = 'https://p3fni16x34.execute-api.us-east-1.amazonaws.com/dev/mypath'; // Replace with your actual API Gateway URL
+
+                const requestData = {
+                game_id: localStorage.getItem('gameId'),
+                player_id: responseData.winnerId,
+                score: 1
+                };
+
+                fetch(gateWayEndpointUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                    // Add other headers if needed (e.g., Authorization)
+                },
+                body: JSON.stringify(requestData)
+                })
+                .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+                })
+                .then(data => {
+                console.log('API Response:', data);
+                // Handle the API response data here
+                })
+                .catch(error => {
+                console.error('There was a problem with the fetch operation:', error);
+                });
+
             } else if (status === 1) {
                 gameOver = true;
                 //showMessage('Game over! No winner!');
@@ -716,6 +783,14 @@ document.addEventListener('DOMContentLoaded', function() {
             updateUI();
         };
 
+
+        const scoresButton = document.getElementById('score')
+
+        if (scoresButton) { // Check if the button exists before adding the event listener
+            scoresButton.addEventListener('click', getResults);
+        } else {
+            console.error("Element with ID 'scores' not found.");
+        }
 
         function verifyCode() {
             const urlParams = new URLSearchParams(window.location.search);
