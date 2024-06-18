@@ -19,7 +19,7 @@ CORS(app)
 game_controller = GameController()
 
 s3 = boto3.client('s3')
-bucket_name = 'images-d978710632e0ba3f'
+bucket_name = 'images-ea0282973f2d0a91'
 
 
 @app.route('/')
@@ -151,8 +151,8 @@ def handle_join(data):
         print("No room specified in the request.")
 
 REGION = 'us-east-1'
-USERPOOL_ID = 'us-east-1_s7dGZtBVP'
-APP_CLIENT_ID = '494q30133etbs537mdrr6a267b'
+USERPOOL_ID = 'us-east-1_flf8mO59r'
+APP_CLIENT_ID = '63v4vcdumt49149ukq6qbq8nvq'
 JWKS_URL = f'https://cognito-idp.{REGION}.amazonaws.com/{USERPOOL_ID}/.well-known/jwks.json'
 
 def get_jwks():

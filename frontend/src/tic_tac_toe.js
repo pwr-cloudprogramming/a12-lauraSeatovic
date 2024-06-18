@@ -56,8 +56,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let socket = null;
 
     const poolData = {
-        UserPoolId: 'us-east-1_s7dGZtBVP', // Your user pool id here
-        ClientId: '494q30133etbs537mdrr6a267b'// Your client id here
+        UserPoolId: 'us-east-1_flf8mO59r', // Your user pool id here
+        ClientId: '63v4vcdumt49149ukq6qbq8nvq'// Your client id here
     };
     const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
 
@@ -347,7 +347,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 getResults();
                 console.log('Game over! Winner is ' + responseData.winner);
                 gameOver = true;
-                const gateWayEndpointUrl = 'https://p3fni16x34.execute-api.us-east-1.amazonaws.com/dev/mypath'; // Replace with your actual API Gateway URL
+                const gateWayEndpointUrl = 'https://pe6uypxocb.execute-api.us-east-1.amazonaws.com/dev/mypath';
 
                 const requestData = {
                 game_id: localStorage.getItem('gameId'),
